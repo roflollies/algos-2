@@ -12,6 +12,16 @@
 
 #include "xtndbln.h"
 
+#include <windows.h>
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+#define YELLOW  "\x1b[33m"
+#define BLUE    "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN    "\x1b[36m"
+#define RESET   "\x1b[0m"
+
+#define EMPTY 0
 // a bucket stores an array of keys
 // it also knows how many bits are shared between possible keys, and the first 
 // table address that references it
@@ -37,6 +47,14 @@ struct xtndbln_table {
 // initialise an extendible hash table with 'bucketsize' keys per bucket
 XtndblNHashTable *new_xtndbln_hash_table(int bucketsize) {
 	fprintf(stderr, "not yet implemented\n");
+	// make a new table
+	// malloc table
+	// create a new bucket of depth bucketsize
+	XtndblNHashTable *table = malloc(sizeof(*table));
+	*table->buckets = malloc(sizeof(*table->buckets) * bucketsize);
+	table->size = EMPTY;
+	table->depth = 0;
+
 	return NULL;
 }
 

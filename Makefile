@@ -6,7 +6,7 @@
 #
 
 CC     = gcc
-CFLAGS = -Wall -Wno-format -std=c99
+CFLAGS = -Wall -Wno-format -std=c99 -g
 EXE    = a2
 OBJ    = main.o inthash.o hashtbl.o tables/linear.o tables/cuckoo.o \
 		 tables/xtndbl1.o tables/xtndbln.o tables/xuckoo.o

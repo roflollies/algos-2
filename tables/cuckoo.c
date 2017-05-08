@@ -43,8 +43,7 @@ void upsize_table(CuckooHashTable *table, int size);
 void upsize_inner(InnerTable *table, int size);
 InnerTable *new_inner_table(int size);
 //void upsize_table(CuckooHashTable *table, int size);
-bool try_t1_insert(CuckooHashTable *table, int64 size, int orig_pos, int64 key, int loop);
-bool try_t2_insert(CuckooHashTable *table, int64 size, int orig_pos, int64 key, int loop);
+bool try_insert(CuckooHashTable *table, int64 size, int orig_pos, int64 key, int loop);
 
 // initialise a cuckoo hash table with 'size' slots in each table
 CuckooHashTable *new_cuckoo_hash_table(int size) {
@@ -87,7 +86,7 @@ bool cuckoo_hash_table_insert(CuckooHashTable *table, int64 key) {
 		//printf(RED "%d is already in the table!\n" RESET, key);
 		return false;
 	}
-	bool result = try_t1_insert(table, key, (h1(key)%table->size), key, EMPTY);
+	bool result = try_insert(table, key, (h1(key)%table->size), key, EMPTY);
 	//printf("Success!\n");
 	return result;
 }
@@ -151,7 +150,7 @@ void cuckoo_hash_table_print(CuckooHashTable *table) {
 // print some statistics about 'table' to stdout
 void cuckoo_hash_table_stats(CuckooHashTable *table) {
 	//fprintf(stderr, "not yet implemented\n");
-	printf("This table has still not yet exploded.\n");
+	//printf("This table has still not yet exploded.\n");
 }
 
 // Helper Functions!
@@ -166,70 +165,53 @@ InnerTable *new_inner_table(int size) {
 	assert(table->slots != NULL);
 	table->inuse = malloc(sizeof(*table->inuse) * size);
 	assert(table->inuse != NULL);
-	printf("Malloc success!\n");
+	//printf("Malloc success!\n");
 	for (i = 0; i < size; i++) {
 		table->inuse[i] = false;
-		printf("Setting slot %d to false.\n", i);
+		//printf("Setting slot %d to false.\n", i);
 	}
 	return table;
 }
 
 // Recursive function which performs cuckoo hash
-bool try_t1_insert(CuckooHashTable *table, int64 key, int orig_pos, int64 orig_key, int loop){
-	int init_pos = h1(key) % table->size;
+bool try_insert(CuckooHashTable *table, int64 key, int orig_pos, int64 orig_key, int loop){
+	int init_pos; 
 	//printf(CYAN "Initial pos is: %d", init_pos);
 	// base case
 	loop++;
-	if ((init_pos == orig_pos) && (key == orig_key) && loop > 1) {
+	InnerTable *inner_table;
+	if (loop % 2 == 0) {
+		inner_table = table->table2;
+		init_pos = h2(key) % table->size;
+	}
+	else {
+		inner_table = table->table1;
+		init_pos = h1(key) % table->size;
+	}
+	if ((init_pos == orig_pos) && (key == orig_key) && loop > 1 && (loop % 2 == 1)) {
 		//printf("Doubling Table...\n");
 		upsize_table(table, table->size*2);
 		//printf("%d key", key);
-		try_t1_insert(table, key, orig_pos, orig_key, EMPTY);
+		try_insert(table, key, orig_pos, orig_key, EMPTY);
 		return true;
 	}
 	// check if there is already something in the position
-	if (table->table1->inuse[init_pos] == true){
+	if (inner_table->inuse[init_pos] == true){
 		//printf(YELLOW "Table 1 Slot %d already occupied by %d, rehashing.\n" RESET, init_pos, table->table1->slots[init_pos]);
-		int64 rehash_key = table->table1->slots[init_pos];
-		table->table1->slots[init_pos] = key;
-		try_t2_insert(table, rehash_key, orig_pos, orig_key, loop);
+		int64 rehash_key = inner_table->slots[init_pos];
+		inner_table->slots[init_pos] = key;
+		try_insert(table, rehash_key, orig_pos, orig_key, loop);
 	}
 	else {
 		//printf(GREEN "Successfully inserted %d!\n" RESET, key);
-		table->table1->inuse[init_pos] = true;
-		table->table1->slots[init_pos] = key;
+		inner_table->inuse[init_pos] = true;
+		inner_table->slots[init_pos] = key;
 		return true;
 	}
-	
-}
-
-bool try_t2_insert(CuckooHashTable *table, int64 key, int orig_pos, int64 orig_key, int loop){
-	int init_pos = h2(key) % table->size;
-	// base case
-	loop++;
-	/*if ((init_pos == orig_pos) && (key == orig_key) && loop > 1) {
-		printf("Doubling Table...\n");
-		upsize_table(table, table->size*2);
-		//return true;
-	}*/
-	//else{
-	// check if there is already something in the position
-	if (table->table2->inuse[init_pos] == true){
-		//printf(YELLOW "Table 2 Slot %d already occupied by %d, rehashing.\n" RESET, init_pos, table->table1->slots[init_pos]);
-		int64 rehash_key = table->table2->slots[init_pos];
-		table->table2->slots[init_pos] = key;
-		try_t1_insert(table, rehash_key, orig_pos, orig_key, loop);
-	}
-	else {
-		//printf(GREEN "Successfully inserted %d!\n" RESET, key);
-		table->table2->inuse[init_pos] = true;
-		table->table2->slots[init_pos] = key;
-		return true;
-	}
-	//}
 }
 
 void upsize_table(CuckooHashTable *table, int size) {
+	assert(table);
 	assert(size < MAX_TABLE_SIZE && "error: table has grown too large!");
 	int i;
 	int64 *old_keys_1 = table->table1->slots;
@@ -248,6 +230,10 @@ void upsize_table(CuckooHashTable *table, int size) {
 			cuckoo_hash_table_insert(table, old_keys_2[i]);
 		}
 	}
+	free(old_keys_1);
+	free(old_keys_2);
+	free(old_inuse_1);
+	free(old_inuse_2);
 }
 
 void upsize_inner(InnerTable *table, int size){

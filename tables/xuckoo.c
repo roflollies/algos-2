@@ -274,9 +274,11 @@ bool xuckoo_hash_table_lookup(XuckooHashTable *table, int64 key) {
 	bool found = false;
 	if (table->table1->buckets[address]->full) {
 		// found it?
+		//printf("Check %d vs %d\n", key, table->table1->buckets[address]->key);
 		found = table->table1->buckets[address]->key == key;
 	}
-	if (table->table2->buckets[address2]->full) {
+	if (table->table2->buckets[address2]->full && found == false) {
+		//printf("Check %d vs %d\n", key, table->table2->buckets[address2]->key);
 		found = table->table2->buckets[address2]->key == key;
 	}
 

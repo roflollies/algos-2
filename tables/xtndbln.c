@@ -3,7 +3,9 @@
  * resolving collisions by incrementally growing the hash table
  *
  * created for COMP20007 Design of Algorithms - Assignment 2, 2017
- * by ...
+ * by Samuel Xu
+ * Uses code retrieved from xtndbl1.c and linear.c created by 
+ * Matt Farrugia <matt.farrugia@unimelb.edu.au>
  */
 
 #include <stdio.h>
@@ -13,6 +15,8 @@
 
 #include "xtndbln.h"
 
+/*
+
 #include <windows.h>
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
@@ -21,6 +25,7 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN    "\x1b[36m"
 #define RESET   "\x1b[0m"
+*/
 
 #define EMPTY 0
 
@@ -58,17 +63,18 @@ struct xtndbln_table {
 // create a new bucket first referenced from 'first_address', based on 'depth'
 // bits of its keys' hash values
 static Bucket *new_bucket(int first_address, int depth, int bucketsize) {
-	//printf(GREEN "New bucket at %d size.\n" RESET, bucketsize);
+	// Create a new bucket
 	Bucket *bucket = malloc(sizeof *bucket);
 	assert(bucket);
 
+	// Create an array to hold keys
 	bucket->keys = malloc(sizeof(int64) * bucketsize);
 	assert(bucket->keys);
 
+	// Set bucket values to initial values
 	bucket->id = first_address;
 	bucket->depth = depth;
 	bucket->nkeys = 0;
-	//printf(GREEN "Finish bucket.\n" RESET);
 	return bucket;
 }
 
@@ -95,18 +101,15 @@ static void double_table(XtndblNHashTable *table) {
 // reinsert a key into the hash table after splitting a bucket --- we can assume
 // that there will definitely be space for this key because it was already
 // inside the hash table previously
-// use 'xtndbl1_hash_table_insert()' instead for inserting new keys
+// use 'xtndbln_hash_table_insert()' instead for inserting new keys
 static void reinsert_key(XtndblNHashTable *table, int64 key) {
-	//printf(YELLOW "reinserting %d..." RESET, key);
 	int address = rightmostnbits(table->depth, h1(key));
 	table->buckets[address]->keys[table->buckets[address]->nkeys] = key;
 	table->buckets[address]->nkeys++;
-	//printf(GREEN "reinsert success!\n" RESET);
 }
 
 // split the bucket in 'table' at address 'address', growing table if necessary
 static void split_bucket(XtndblNHashTable *table, int address) {
-	//xtndbln_hash_table_print(table);
 	// FIRST,
 	// do we need to grow the table?
 	if (table->buckets[address]->depth == table->depth) {
@@ -153,7 +156,6 @@ static void split_bucket(XtndblNHashTable *table, int address) {
 		// redirect this table entry to point at the new bucket
 		table->buckets[a] = newbucket;
 	}
-	//xtndbln_hash_table_print(table);
 	// FINALLY,
 	// filter the key from the old bucket into its rightful place in the new 
 	// table (which may be the old bucket, or may be the new bucket)
@@ -169,11 +171,9 @@ static void split_bucket(XtndblNHashTable *table, int address) {
 	}
 	// reinsert keys
 	for (i = 0; i < count; i++) {
-		//printf(RED "reinserting %d...\n" RESET, keys[i]);
 		reinsert_key(table, keys[i]);
-		//xtndbln_hash_table_print(table);
 	}
-	//free(keys);
+	free(keys);
 }
 
 
@@ -181,25 +181,24 @@ static void split_bucket(XtndblNHashTable *table, int address) {
 
 // initialise an extendible hash table with 'bucketsize' keys per bucket
 XtndblNHashTable *new_xtndbln_hash_table(int bucketsize) {
-	//fprintf(stderr, "not yet implemented\n");
 	// make a new table
 	// malloc table
 	// create a new bucket of depth bucketsize
-	//printf("New table.\n");
 	XtndblNHashTable *table = malloc(sizeof(*table));
 	assert(table);
 
+	// set initial values
 	table->size = 1;
 	table->buckets = malloc(sizeof *table->buckets);
 	assert(table->buckets);
 	table->depth = 0;
+	// make new bucket of bucketsize
 	table->buckets[0] = new_bucket(0, 0, bucketsize);
 	table->bucketsize = bucketsize;
 
 	table->stats.nbuckets = 1;
 	table->stats.nkeys = 0;
 	table->stats.time = 0;
-	//printf("finish table\n");
 	return table;
 }
 
@@ -207,21 +206,14 @@ XtndblNHashTable *new_xtndbln_hash_table(int bucketsize) {
 // free all memory associated with 'table'
 void free_xtndbln_hash_table(XtndblNHashTable *table) {
 	assert(table);
-	//printf(YELLOW "Freeing...\n" RESET);
 	// loop backwards through the array of pointers, freeing buckets only as we
 	// reach their first reference
 	// (if we loop through forwards, we wouldn't know which reference was last)
-	int i, j;
+	int i;
 	for (i = table->size-1; i >= 0; i--) {
 		if (table->buckets[i]->id == i) {
-			//printf(YELLOW "Freeing id %d...\n" RESET, i);
-			//for (j = 0; j < table->buckets[i]->nkeys; j++) {
-			//printf(YELLOW "Attempting to free keys\n");
 			free(table->buckets[i]->keys);
-			//printf(GREEN "Finished freeing keys!\n");
-			//}
 			free(table->buckets[i]);
-			//printf(YELLOW "Freed bucket!\n");
 		}
 	}
 
@@ -230,7 +222,6 @@ void free_xtndbln_hash_table(XtndblNHashTable *table) {
 	
 	// free the table struct itself
 	free(table);
-	//printf(GREEN "Freedom!" RESET);
 }
 
 
@@ -238,7 +229,6 @@ void free_xtndbln_hash_table(XtndblNHashTable *table) {
 // insert 'key' into 'table', if it's not in there already
 // returns true if insertion succeeds, false if it was already in there
 bool xtndbln_hash_table_insert(XtndblNHashTable *table, int64 key) {
-	//fprintf(stderr, "not yet implemented\n");
 	assert(table);
 	int start_time = clock(); // start timing
 	
@@ -251,7 +241,6 @@ bool xtndbln_hash_table_insert(XtndblNHashTable *table, int64 key) {
 	for (i = 0; i < table->buckets[address]->nkeys; i++) {
 		if (table->buckets[address]->keys[i] == key) {
 			table->stats.time += clock() - start_time; // add time elapsed
-			//printf("key already here!\n");
 			return false;
 		}
 	} 
@@ -265,10 +254,8 @@ bool xtndbln_hash_table_insert(XtndblNHashTable *table, int64 key) {
 	}
 
 	// there's now space! we can insert this key
-	//printf(GREEN "inserting %d" RESET, key);
 	table->buckets[address]->keys[table->buckets[address]->nkeys] = key;
 	table->buckets[address]->nkeys++;
-	//printf("%d\n", table->buckets[address]->keys[table->buckets[address]->nkeys-1]);
 	table->stats.nkeys++;
 
 	// add time elapsed to total CPU time before returning

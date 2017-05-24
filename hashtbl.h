@@ -15,7 +15,7 @@
 // enumerated type containing constants for the various types of hash table
 // supported
 typedef enum type {
-	NOTYPE = -1, LINEAR, XTNDBL1, CUCKOO, XTNDBLN, XUCKOO
+	NOTYPE = -1, LINEAR, XTNDBL1, CUCKOO, XTNDBLN, XUCKOO, XUCKOON
 } TableType;
 
 // converts from a string representation to a TableType constant:

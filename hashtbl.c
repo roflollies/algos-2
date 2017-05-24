@@ -17,6 +17,7 @@
 #include "tables/cuckoo.h"	// create for part 1
 #include "tables/xtndbln.h" // create for part 2
 #include "tables/xuckoo.h"	// create for part 3
+#include "tables/xuckoon.h"
 
 // converts from a string representation to a TableType constant:
 // "linear"			->	LINEAR
@@ -40,11 +41,14 @@ TableType strtotype(char *str) {
 	if (strcmp("3", str) == 0 || strcmp("xuckoo",  str) == 0) {
 		return XUCKOO;
 	}
+	if (strcmp("4", str) == 0 || strcmp("xuckoon",  str) == 0){
+		return XUCKOON;
+	}
 	return NOTYPE;
 }
-
 // a HashTable is a wrapper for an actual table structure of some type,
-// and it also remembers is own type
+// and it also remembers is own type]
+
 struct table {
 	TableType type;	// what type of hash table is this?
 	void *table;	// the hash table itself
@@ -78,6 +82,9 @@ HashTable *new_hash_table(TableType type, int size) {
 		case XUCKOO:
 			table->table = new_xuckoo_hash_table();
 			break;
+		case XUCKOON:
+			table->table = new_xuckoon_hash_table(size);
+			break;
 		default:
 			// no such table type? error. release memory and return NULL
 			free(table);
@@ -108,6 +115,9 @@ void free_hash_table(HashTable *table) {
 		case XUCKOO:
 			free_xuckoo_hash_table(table->table);
 			break;
+		case XUCKOON:
+			free_xuckoon_hash_table(table->table);
+			break;
 		default:
 			break;
 	}
@@ -133,6 +143,8 @@ bool hash_table_insert(HashTable *table, int64 key) {
 			return xtndbln_hash_table_insert(table->table, key);
 		case XUCKOO:
 			return xuckoo_hash_table_insert(table->table, key);
+		case XUCKOON:
+			return xuckoon_hash_table_insert(table->table, key);
 		default:
 			return false;
 	}
@@ -155,6 +167,8 @@ bool hash_table_lookup(HashTable *table, int64 key) {
 			return xtndbln_hash_table_lookup(table->table, key);
 		case XUCKOO:
 			return xuckoo_hash_table_lookup(table->table, key);
+		case XUCKOON:
+			return xuckoon_hash_table_lookup(table->table, key);
 		default:
 			return false;
 	}
@@ -181,6 +195,9 @@ void hash_table_print(HashTable *table) {
 		case XUCKOO:
 			xuckoo_hash_table_print(table->table);
 			break;
+		case XUCKOON:
+			xuckoon_hash_table_print(table->table);
+			break;
 		default:
 			break;
 	}
@@ -206,6 +223,9 @@ void hash_table_stats(HashTable *table) {
 			break;
 		case XUCKOO:
 			xuckoo_hash_table_stats(table->table);
+			break;
+		case XUCKOON:
+			xuckoon_hash_table_stats(table->table);
 			break;
 		default:
 			break;
